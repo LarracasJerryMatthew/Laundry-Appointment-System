@@ -49,9 +49,10 @@ class WasherWidget(QWidget):
 
 
 class CustomerCard(QWidget):
-    def __init__(self, name):
+    def __init__(self, name, data=None):
         super().__init__()
 
+        
         # --- widgets ---
         self.status = StatusDot()
         self.status.setObjectName("statusDot")
@@ -89,6 +90,7 @@ class CustomerCard(QWidget):
         customer_layout.setRowStretch(2, 1)
         self.setLayout(customer_layout)
 
+    
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -2,7 +2,8 @@ import sys, os
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QMainWindow,
                              QGridLayout, QPushButton, QVBoxLayout,
-                             QHBoxLayout, QFrame, QComboBox, QStackedLayout, QStackedWidget)
+                             QHBoxLayout, QFrame, QComboBox, QStackedLayout, QStackedWidget,
+                             QFormLayout)
 
 from PyQt6.QtGui import QIcon
 from pathlib import Path
@@ -14,7 +15,8 @@ class Dashboard(QMainWindow):
         super().__init__()
         self.setWindowTitle("Laundry Dashboard System")
         self.setFixedSize(800, 527)
-
+        self.cards = []
+        self.selected_card = None
         # ===== Buttons =====
 
         # ----- sidebar -----
@@ -48,7 +50,7 @@ class Dashboard(QMainWindow):
         self.exit_btn.setIcon(QIcon(exit_icon_path))
         self.exit_btn.setIconSize(QSize(60,60))
         self.exit_btn.setFlat(True)
-        self.exit_btn.setToolTip("About")
+        self.exit_btn.setToolTip("Exit")
         
         #self.dashboard_btn.clicked.connect()
         #self.dashboard_btn.clicked.connect()
@@ -67,10 +69,32 @@ class Dashboard(QMainWindow):
         # ----- details -----
         self.details_placeholder = QLabel("Select a washer to view details")
         self.details_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.details_placeholder.setWordWrap(True)
 
         self.customer_details_name = QLabel("Customer #1")
-        #self.statusDropdown = QComboBox()
+        self.customer_details_name.setObjectName("details_name")
+        self.customer_details_name.setWordWrap(True)
+        #self.statusDropdown = QComboBox() 
         
+        self.detail_labels = {}
+        form = QFormLayout()
+        for key, title in [("phone", "Phone"), ("service", "Service"), ("weight", "Weight"), ("pickup", "Pick-up")]:
+            value = QLabel("-")
+            value.setWordWrap(True)
+            value.setObjectName("Details value")
+            self.detail_labels[key] = value
+            form.addRow(QLabel(title + ":"),value)
+
+        info_layout = QVBoxLayout()
+        info_layout.addWidget(self.customer_details_name)
+        info_layout.addLayout(form)
+        info_layout.addStretch(1)
+        info_page = QWidget()
+        info_page.setLayout(info_layout)
+
+        self.details_stack = QStackedWidget()
+        self.details_stack.addWidget(self.details_placeholder)  # index 0
+        self.details_stack.addWidget(info_page)                 # index 1
 
         # ===== Layout =====
 
@@ -102,9 +126,16 @@ class Dashboard(QMainWindow):
         header_layout.addWidget(self.add_appointment_btn)
 
         #testing [NOT FINAL]
-        names = ["Customer #1", "Customer #2", "Customer #3", "Customer #4", "Customer #5"]
-        for i, name in enumerate(names):
-            customers_layout.addWidget(CustomerCard(name), i // 2, i % 2)
+        sampledata = [{"name": "Customer 1", "Contact #": "09307241245", 
+                       "Delivery": "Pick-up", "Weight of garmets" : "5kg"},
+                      {"name": "Customer 2", "Contact #": "09307748805", 
+                       "Delivery": "Drop Off", "Weight of garmets" : "3kg"},
+                     ]
+        for i, data in enumerate(sampledata):
+            card = CustomerCard(data["name"], data)
+            card.clicked.connect(self.show_details)
+            self.cards.append(card)
+            customers_layout.addWidget(i // 2, i % 2)
 
 
         washers_layout.addWidget(self.inQueue_text, stretch=0)
@@ -117,6 +148,7 @@ class Dashboard(QMainWindow):
         # ----- details (right) -----
         details_layout = QVBoxLayout()
         details_layout.addWidget(self.details_placeholder)
+
 
         details_container = QFrame()
         details_container.setLayout(details_layout)
@@ -142,8 +174,17 @@ class Dashboard(QMainWindow):
         self.transaction_btn.setObjectName("transaction_btn")
         self.about_btn.setObjectName("about_btn")
         self.exit_btn.setObjectName("exit_btn")
-        
 
+    def show_details(self, card):
+        if self.selected_card is not None:
+           self.selected_card.set_selected(False)
+        self.selected_card = card
+        card.set_selected(True)        
+
+        d = card.data
+        self.customer_details_name.setText(d.get("sampledata", "-"))
+        for key, label in self.detail_labels.items():
+            label.setText(d.get(key, "-"))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
