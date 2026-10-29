@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtCore import Qt, QRectF, QSize
+from PyQt6.QtCore import Qt, QRectF, QSize, pyqtSignal #NEW
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QFrame, QGridLayout
 from PyQt6.QtGui import QPainter, QPen, QColor, QPalette
 
@@ -49,9 +49,17 @@ class WasherWidget(QWidget):
 
 
 class CustomerCard(QWidget):
+    clicked = pyqtSignal(object) #NEW
     def __init__(self, name, data=None):
         super().__init__()
 
+        self.data = {"name": name}  #NEW
+        if data: self.data.update(data) #NEW
+        
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True) #NEW
+        self.setObjectName("customerCard")  #NEW
+        self.setCursor(Qt.CursorShape.PointingHandCursor) #NEW
+        self.setProperty("selected", False) #NEW
         
         # --- widgets ---
         self.status = StatusDot()
@@ -89,6 +97,16 @@ class CustomerCard(QWidget):
         customer_layout.setColumnStretch(1, 1)
         customer_layout.setRowStretch(2, 1)
         self.setLayout(customer_layout)
+        
+    def set_selected(self, selected):  #NEW
+        self.setProperty("selected", selected) #NEW
+        self.style().unpolish(self) #NEW
+        self.style().polish(self) #NEW
+ 
+    def mousePressEvent(self, event):  #NEW
+        if event.button() == Qt.MouseButton.LeftButton: #NEW
+            self.clicked.emit(self) #NEW
+        super().mousePressEvent(event) #NEW
 
     
 
@@ -96,7 +114,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     Washer_qss = Path(__file__).with_name("Dashboard_style.qss")
     app.setStyleSheet(Washer_qss.read_text())
-    card = CustomerCard()
+    card = CustomerCard()  
     card.resize(270, 280)
     card.show()
     sys.exit(app.exec())
